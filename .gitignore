@@ -1,0 +1,51 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# AWS Credentials (If using AWS CLI locally)
+.aws/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+debug.log*
+
+# Database files
+*.sqlite
+*.sqlite-journal
+mongodb-data/
+
+# Compiled build files
+dist/
+build/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VSCode settings
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# S3, SNS, SQS, or Lambda Temp Files (if any)
+.aws-s3-temp/
+.aws-sns-temp/
+.aws-sqs-temp/

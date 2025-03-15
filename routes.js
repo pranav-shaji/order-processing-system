@@ -21,6 +21,9 @@ import {
   DeleteMessageCommand,
 } from "@aws-sdk/client-sqs";
 const sqsQueue = new SQSClient({ region: "ap-south-1" });
+//ses
+import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
+const sesQueue = new SESClient({region:'ap-south-1'})
 
 router.post("/addproducts", async (req, res) => {
   try {
@@ -134,7 +137,7 @@ router.post("/placeorder", async (req, res) => {
 const sqsDemon = async () => {
   try {
     const command = new ReceiveMessageCommand({
-      QueueUrl:process.env.QUEUEURL,
+      QueueUrl: process.env.QUEUEURL,
       MaxNumberOfMessages: 10,
       WaitTimeSeconds: 20,
     });
@@ -166,14 +169,43 @@ const sqsDemon = async () => {
               return;
             }
 
-            // Check and update order status
+            // Check and update order status to avoid re-processing
             if (order.status === "Pending") {
               order.status = "Completed";
               await order.save();
-              console.log(
-                `Order with ID ${orderId} status updated to Processing`
-              );
+              console.log(`Order with ID ${orderId} status updated to Completed`);
+
+              // Send email confirmation only once
+              const createSendEmailCommand = new SendEmailCommand({
+                Destination: {
+                  ToAddresses: ["pranavshaji2244@gmail.com"],
+                },
+                Message: {
+                  Body: {
+                    Text: {
+                      Charset: "UTF-8",
+                      Data: `Your order with ID ${orderId} has been received and processed.`,
+                    },
+                  },
+                  Subject: {
+                    Charset: "UTF-8",
+                    Data: "Order Received and Processed",
+                  },
+                },
+                Source: "pranavshaji2244@gmail.com",
+              });
+
+              const sendEmailConfirmation = await sesQueue.send(createSendEmailCommand);
+              console.log("Email sent:", sendEmailConfirmation);
             }
+
+            // Delete the SQS message after successful processing
+            const deleteCommand = new DeleteMessageCommand({
+              QueueUrl: process.env.QUEUEURL,
+              ReceiptHandle: message.ReceiptHandle,
+            });
+            await sqsQueue.send(deleteCommand);
+            console.log(`Message with ID ${message.MessageId} deleted from SQS`);
           } else {
             console.log("Message field is missing in Body:", parsedBody);
           }
@@ -189,6 +221,7 @@ const sqsDemon = async () => {
     return "Error during SQS processing";
   }
 };
+
 
 
 const runSqsDemon = async () => {
